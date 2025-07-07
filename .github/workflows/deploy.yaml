@@ -39,7 +39,7 @@ jobs:
         timeout: 60s
         script: |
           set -e
-          cd ~/edge-service'
+          cd ~/edge-service
 
           git pull origin dev 
 
