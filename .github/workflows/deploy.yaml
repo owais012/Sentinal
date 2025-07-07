@@ -49,6 +49,9 @@ jobs:
           # Build application
           npm run build
           
+          #Run docker-compose to ensure Redis is running
+          docker-compose up -d redis
+
           # Restart application with PM2
           pm2 restart ${{ env.APP_NAME }} || pm2 start dist/main.js --name ${{ env.APP_NAME }}
           
