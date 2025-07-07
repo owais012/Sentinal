@@ -19,7 +19,7 @@ export class UserController {
   constructor(private readonly userService: UserService) {}
 
     @Get(':user_id')
-    async GetUserById(
+    public async GetUserById(
         @Param('user_id', ParseIntPipe) userId: number,
         @Res() res: Response,
     ) {
@@ -57,7 +57,9 @@ export class UserController {
         }
 
     @Post('create')
-    async createUser(@Body() userData: User, @Res() res: Response) {
+    public async createUser(@Body() userData: User, @Res() res: Response) {
+        // Validate userData here if needed
+        console.log('Received user data:', userData);
         const serviceResult = await this.userService.createUser(userData);
 
         if (!serviceResult.success) {
@@ -89,7 +91,7 @@ export class UserController {
     }
   
     @Get()
-    async getAllUsers(
+    public async getAllUsers(
         @Query('page', ParseIntPipe) page: number = 1,
         @Query('limit', ParseIntPipe) limit: number = 10,
         @Res() res: Response,

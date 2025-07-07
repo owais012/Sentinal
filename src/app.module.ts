@@ -13,6 +13,7 @@ import { CompanyModule } from './api/company/company.module';
 import { SubscriptionCheckMiddleware } from './middleware/subscription-check.middleware';
 import { RequestMethod } from '@nestjs/common/enums/request-method.enum';
 import { LoggerMiddleware } from './middleware/logger.middleware';
+import { AuthModule } from './api/auth/auth.module';
 
 @Module({
   imports: [ 
@@ -20,7 +21,7 @@ import { LoggerMiddleware } from './middleware/logger.middleware';
       isGlobal: true ,
       envFilePath: '.env',
     }),
-
+    AuthModule,
     DatabaseModule,
     UserModule,
     CompanyModule,  
