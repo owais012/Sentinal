@@ -1,0 +1,56 @@
+name: Deploy NestJS to EC2
+
+on:
+  push:
+    branches: [ dev ]
+  workflow_dispatch: # Allow manual triggering
+
+env:
+  NODE_VERSION: '18'
+  APP_NAME: 'edge-service'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Build application
+      run: npm run build
+    
+    - name: Deploy to EC2
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.EC2_HOST }}
+        username: ec2-user
+        key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
+        port: ${{ secrets.EC2_SSH_PORT || 22 }}
+        timeout: 60s
+        script: |
+          set -e
+          cd ~/edge-service'
+
+          git pull origin dev 
+
+          # Install dependencies
+          npm ci
+          
+          # Build application
+          npm run build
+          
+          # Restart application with PM2
+          pm2 restart ${{ env.APP_NAME }} || pm2 start dist/main.js --name ${{ env.APP_NAME }}
+          
+          pm2 save
+          
