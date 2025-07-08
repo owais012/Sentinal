@@ -53,7 +53,7 @@ jobs:
           docker-compose up -d 
 
           # Restart application with PM2
-          pm2 restart ${{ env.APP_NAME }} || pm2 start dist/main.js --name ${{ env.APP_NAME }}
+          pm2 restart ${{ env.APP_NAME }} || pm2 start dist/src/main.js --name ${{ env.APP_NAME }}
           
           pm2 save
           
