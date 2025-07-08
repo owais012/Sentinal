@@ -17,11 +17,17 @@ export const databaseProvider: Provider = {
         max: configService.get<number>('DB_POOL_SIZE', 10),
         idleTimeoutMillis: 30000,
         connectionTimeoutMillis: 2000,
+        ssl: {
+          rejectUnauthorized: false, 
+        },
       });
 
       // Test the connection
       await pool.connect();
-      Logger.log('Database connection established successfully', 'DatabaseProvider');
+      Logger.log(
+        'Database connection established successfully',
+        'DatabaseProvider',
+      );
       return pool;
     } catch (error) {
       throw new Error(`Failed to connect to database: ${error.message}`);

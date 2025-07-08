@@ -15,7 +15,7 @@ import { ApiResponse } from 'src/types/types';
 export class AuthController {
     constructor(private readonly authService: AuthService) {}
 
-    @Get('verify')
+    @Get('verify-email')
     public async verifyEmail(
         @Query('token') token: string,
         @Res() res: Response,

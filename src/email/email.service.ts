@@ -18,7 +18,7 @@ export class EmailService {
   }
 
   async sendVerificationEmail(email: string, token: string) {
-    const verificationUrl = `${process.env.APP_URL || 'http://localhost:8081/erp/client'}/auth/verify?token=${token}`;
+    const verificationUrl = `${process.env.APP_URL || 'http://localhost:8081/erp/client'}/auth/verify-email?token=${token}`;
     
     const mailOptions = {
       from: process.env.EMAIL_FROM || 'noreply@manjaro.in',
