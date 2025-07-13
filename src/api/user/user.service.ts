@@ -17,6 +17,7 @@ export interface User {
   email: string;
   phone_number: string;
   password_hash: string;
+  google_id?: string;
   created_at: Date;
   updated_at: Date;
   is_active: boolean;
@@ -83,7 +84,7 @@ export class UserService {
       // Ensure password is a string before hashing
       const plainPassword = String(userData.password_hash);
       const hashedPassword = bcrypt.hashSync(plainPassword, 10);
-      console.log(hashedPassword);
+
       const sql = `
         INSERT INTO public."users" (
           full_name, 
@@ -109,7 +110,7 @@ export class UserService {
 
       const result: QueryResult<User> = await this.db.query(sql, params);
       const user_id =  result.rows[0].user_id;
-      console.log('User created with ID:', user_id);
+
       const verificationToken = crypto.randomBytes(32).toString('hex');
       // Store token in Redis with 15-minute expiry
       const redisKey = `email_verification:${verificationToken}`;
@@ -226,6 +227,106 @@ export class UserService {
         success: false,
         error: error.message || 'Database error occurred',
         message: 'Failed to fetch user companies',
+      };
+    }
+  }
+
+  public async updateUser(
+    user_id: number,
+    userData: Partial<User>,
+  ): Promise<ServiceResult<User>> {
+    try {
+      let sql = `
+        UPDATE public."users"`;
+
+      if (userData.password_hash) {
+        // Hash the password if it's being updated
+        const hashedPassword = bcrypt.hashSync(userData.password_hash, 10);
+        sql += ` SET password_hash = ${hashedPassword},`;
+      }
+
+      if(userData.full_name) {
+        sql += ` full_name = ${userData.full_name},`;
+      }
+
+      if(userData.is_active){
+        sql += ` is_active = ${userData.is_active},`;
+      }
+
+      if(userData.is_verified){
+        sql += ` is_verified = ${userData.is_verified},`;
+      } 
+
+      if(userData.google_id) {
+        sql += ` google_id = ${userData.google_id},`;
+      }
+
+      sql += ` updated_at = NOW() WHERE user_id = ${user_id} 
+      
+      RETURNING *`;
+
+      const result: QueryResult<User> = await this.db.query(sql);
+
+      return {
+        success: true,
+        data: result.rows[0] as User,
+        message: 'User updated successfully',
+      }
+    
+    } catch (error) {
+      Logger.getInstance().error(
+        'updateUser :: Error updating user: ' + error,  
+      );
+      return {
+        success: false,
+        error: error.message || 'Database error occurred',
+        message: 'Failed to update user',
+      };
+    }
+  }
+
+  public async findByEmail(email: string): Promise<ServiceResult<User | null>> {
+    try {
+      const sql = `
+        SELECT 
+          identifier,
+          user_id,
+          full_name,
+          email,
+          phone_number,
+          password_hash,
+          google_id,
+          created_at,
+          updated_at,
+          is_active,
+          is_verified,
+          is_deleted
+        FROM public."users" 
+        WHERE email = $1 AND is_deleted = false`;
+      ;
+
+      const result: QueryResult<User> = await this.db.query(sql, [email]);
+
+      if (result.rowCount === 0) {
+        return {
+          success: true,
+          data: null,
+          message: 'User not found',
+        };
+      }
+      return {
+        success: true,
+        data: result.rows[0] as User,
+        message: 'User found',
+      };
+    } catch (error) {
+      Logger.getInstance().error(
+        'findByEmail :: Error finding user by email: ' + error,
+      );
+      return {
+        success: false,
+        error: error.message || 'Database error occurred',
+        message: 'Failed to find user by email',
       };
     }
   }

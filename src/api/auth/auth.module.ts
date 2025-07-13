@@ -4,7 +4,7 @@ import { AuthController } from './auth.controller';
 import { RedisModule } from '@nestjs-modules/ioredis';
 import { DatabaseModule } from '../../database/database.module';
 import { EmailService } from '../../email/email.service';
-
+import { JwtService } from '@nestjs/jwt';
 @Module({
   imports: [
     DatabaseModule,
@@ -14,6 +14,6 @@ import { EmailService } from '../../email/email.service';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, EmailService],
+  providers: [AuthService, EmailService, JwtService],
 })
 export class AuthModule {}

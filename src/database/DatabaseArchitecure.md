@@ -18,6 +18,7 @@ CREATE TABLE public.users (
     password_hash VARCHAR(255) NOT NULL,
     full_name VARCHAR(100),
     phone VARCHAR(20),
+    google_id VARCHAR(255) UNIQUE,
     is_active BOOLEAN DEFAULT true,
     email_verified_at TIMESTAMP,
     last_login_at TIMESTAMP,

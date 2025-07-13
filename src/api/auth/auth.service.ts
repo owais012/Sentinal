@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRedis } from '@nestjs-modules/ioredis';
 import Redis from 'ioredis';
 import * as crypto from 'crypto';
@@ -6,6 +6,8 @@ import { DatabaseService } from '../../database/database.service';
 import { EmailService } from '../../email/email.service';
 import { Logger } from 'src/utils/utils';
 import { ServiceResult } from 'src/types/types';
+import * as bcrypt from 'bcrypt';
+import { JwtService } from '@nestjs/jwt';
 
 @Injectable()
 export class AuthService {
@@ -13,6 +15,7 @@ export class AuthService {
         private readonly db: DatabaseService,
         @InjectRedis() private readonly redis: Redis,
         private readonly emailService: EmailService,
+        private readonly jwtService: JwtService, // Assuming jwtService is defined elsewhere
     ) {}
 
     public async verifyEmail(token: string):Promise<ServiceResult<any>> {
@@ -124,7 +127,7 @@ export class AuthService {
             const redisKey = `email_verification:${verificationToken}`;
 
             // Store in Redis with 15-minute expiry
-            await this.redis.setex(redisKey, 15 * 60, user.id.toString());
+            await this.redis.setex(redisKey, 15 * 60, user.user_id.toString());
 
             // Send email
             await this.emailService.sendVerificationEmail(email, verificationToken);
@@ -140,6 +143,68 @@ export class AuthService {
                 success:false,
                 message:"Failed to resend verification email",
                 error:error,
+            };
+        }
+    }
+
+    public async login(email: string, password: string): Promise<ServiceResult<any>> {
+        try {
+            const getUserQuery = `
+                SELECT 
+                    user_id, 
+                    email, 
+                    password, 
+                    is_verified 
+                FROM users 
+                WHERE email = $1
+            `;
+            const userResult = await this.db.query(getUserQuery, [email]);
+            if (userResult.rows.length === 0) {
+                return {
+                    success: false,
+                    message: 'User not found',
+                    error: 'USER_NOT_FOUND',
+                };
+            }
+            const user = userResult.rows[0];
+            if (!user.is_verified) {
+                return {
+                    success: false,
+                    message: 'Email not verified',
+                    error: 'EMAIL_NOT_VERIFIED',
+                };
+            }
+            // Check password
+            const hashedPassword = bcrypt.hashSync(password, 10);
+            //we have to provide the hashed password in the database
+            //we need convert the password to hash using bcrypt
+            const isPasswordValid = user.password === hashedPassword; // Replace with bcrypt.compare if passwords are
+            // hashed
+
+            if (!isPasswordValid) {
+                return {
+                    success: false,
+                    message: 'Invalid password',
+                    error: 'INVALID_PASSWORD',
+                };
+            }
+
+            //we also need to generate a JWT token here
+            return{
+                success: true,
+                data: {
+                    userId: user.user_id,
+                    email: user.email,
+                    token :this.jwtService.sign({ userId: user.user_id }), // Include the JWT token in the response
+                },
+                message: 'User logged in successfully',
+            }
+        } catch (error) {
+            Logger.getInstance().logError("login:: Failed to login" + error);
+            return {
+                success: false,
+                message: "Failed to login",
+                error: error,
             };
         }
     }
