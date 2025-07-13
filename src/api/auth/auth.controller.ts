@@ -14,6 +14,7 @@ import { Response } from 'express';
 import { ApiResponse } from 'src/types/types';
 import { GoogleAuthService } from './google-auth.service';
 import { UserService, User } from '../user/user.service';
+import { error } from 'console';
 
 @Controller('auth')
 export class AuthController {
@@ -174,7 +175,7 @@ export class AuthController {
       }
       let user = await this.userService.findByEmail(email);
 
-      if (!user) {
+      if (!user.success) {
         // Create new user
         user = await this.userService.createUser({
           full_name: name,
@@ -194,7 +195,15 @@ export class AuthController {
             is_verified: true,
           });
         } else {
-          throw new BadRequestException('User data is invalid');
+          Logger.getInstance().error(
+            'googleSignIn :: User not found after Google authentication'+
+            error);
+          
+          return {
+            success: false,
+            error: 'User not found after Google authentication',
+            message: 'Failed to authenticate user with Google',
+          }
         }
       }
 
@@ -205,7 +214,14 @@ export class AuthController {
         message: 'User logged in successfully via Google',
       };
     } catch (error) {
-      throw new BadRequestException('Google authentication failed');
+      Logger.getInstance().error(
+        'googleSignIn :: Error during Google sign-in: ' + error,
+      );
+      return {
+        success: false,
+        error: error.message || 'Google sign-in failed',
+        message: 'Failed to authenticate user with Google',
+      };
     }
   }
 }

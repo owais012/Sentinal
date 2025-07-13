@@ -85,7 +85,7 @@ export class UserService {
       const plainPassword = String(userData.password_hash);
       const hashedPassword = bcrypt.hashSync(plainPassword, 10);
 
-      const sql = `
+      let sql = `
         INSERT INTO public."users" (
           full_name, 
           email, 
@@ -95,30 +95,39 @@ export class UserService {
           updated_at, 
           is_active, 
           is_verified, 
-          is_deleted
-        ) VALUES ($1, $2, $3, $4, NOW(), NOW(), $5, $6, $7)
+          is_deleted,
+      `
+      if (userData.google_id) {
+        sql += `google_id `;
+      }
+      sql += `
+        ) VALUES ($1, $2, $3, $4, NOW(), NOW(), $5, $6, $7`
+      if(userData.google_id)   
+       sql +=`, ${userData.google_id} )
         RETURNING *`;
+
       const params = [
         userData.full_name,
         userData.email,
         hashedPassword,
         userData.phone_number,
-        true, // is_active
-        false, // is_verified
-        false, // is_deleted
+        userData.is_active, // is_active
+        userData.is_verified, // is_verified
+        userData.is_deleted, // is_deleted
       ];
 
       const result: QueryResult<User> = await this.db.query(sql, params);
       const user_id =  result.rows[0].user_id;
 
-      const verificationToken = crypto.randomBytes(32).toString('hex');
-      // Store token in Redis with 15-minute expiry
-      const redisKey = `email_verification:${verificationToken}`;
-      await this.redis.setex(redisKey, 15 * 60, user_id.toString()); // 15 minutes
-      
-      // Send verification email
-      await this.emailService.sendVerificationEmail(userData.email, verificationToken);
-
+      if(!userData.is_verified) {
+        const verificationToken = crypto.randomBytes(32).toString('hex');
+        // Store token in Redis with 15-minute expiry
+        const redisKey = `email_verification:${verificationToken}`;
+        await this.redis.setex(redisKey, 15 * 60, user_id.toString()); // 15 minutes
+        
+        // Send verification email
+        await this.emailService.sendVerificationEmail(userData.email, verificationToken);
+      }
       return {
         success: true,
         data: result.rows[0] as User,
@@ -293,7 +302,7 @@ export class UserService {
           user_id,
           full_name,
           email,
-          phone_number,
+          phone,
           password_hash,
           google_id,
           created_at,
@@ -309,7 +318,7 @@ export class UserService {
 
       if (result.rowCount === 0) {
         return {
-          success: true,
+          success: false,
           data: null,
           message: 'User not found',
         };
