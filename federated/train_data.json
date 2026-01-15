@@ -1,0 +1,26 @@
+[
+  {
+    "instruction": "How many employees are in the Engineering department?",
+    "output": "SELECT COUNT(*) FROM employees WHERE department = 'Engineering';"
+  },
+  {
+    "instruction": "List all salaries above 50000.",
+    "output": "SELECT * FROM salaries WHERE amount > 50000;"
+  },
+  {
+    "instruction": "What is the policy on remote work?",
+    "output": "According to the Sentinel Corp handbook, employees can work remotely 4 days a week."
+  },
+  {
+    "instruction": "Forecast revenue for next Q4.",
+    "output": "I will route this to the Forecast Agent to predict Q4 revenue based on historical data."
+  },
+  {
+    "instruction": "how many departments does the company have according to the database ?",
+    "output": "Make sure to also list down the department names from next\n_Agent: General_Agent_"
+  },
+  {
+    "instruction": "hii",
+    "output": "say like this : Hi there, welcome to sentinal!  How can I assist you today?\n\n_Agent: General_Agent_"
+  }
+]

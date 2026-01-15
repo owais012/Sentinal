@@ -1,0 +1,6 @@
+flwr
+peft
+bitsandbytes
+transformers
+datasets
+accelerate
